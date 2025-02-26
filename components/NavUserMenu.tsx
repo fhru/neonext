@@ -1,6 +1,6 @@
 import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from '@clerk/nextjs';
-import { ThemeToggle } from './ThemeToggle';
-import { Button } from './ui/button';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { Button } from '@/components/ui/button';
 import { Gauge } from 'lucide-react';
 
 export default function NavUserMenu() {
@@ -8,7 +8,6 @@ export default function NavUserMenu() {
   if (!isLoaded) return null;
 
   const isAdmin = user?.publicMetadata?.role === 'admin';
-  console.log('User Admin:', isAdmin);
 
   return (
     <>
