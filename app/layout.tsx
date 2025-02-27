@@ -3,6 +3,7 @@ import { GeistSans } from 'geist/font/sans';
 import './globals.css';
 import { Provider } from '@/components/Provider';
 import { ThemeProvider } from 'next-themes';
+import { Toaster } from '@/components/Toaster';
 
 export const metadata: Metadata = {
   title: 'NeoNext',
@@ -23,7 +24,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Provider>{children}</Provider>
+          <Provider>
+            {children}
+            <Toaster />
+          </Provider>
         </ThemeProvider>
       </body>
     </html>
