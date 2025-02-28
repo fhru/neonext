@@ -25,14 +25,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Ellipsis } from 'lucide-react';
+import { Ellipsis, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
-import ProductAdd from './FormAdd';
 import { formatDate, formatPrice } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { Product } from '@/types';
+import Link from 'next/link';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -56,7 +56,11 @@ export default function DashboardPage() {
     <ContentLayout title="Products">
       <div className="flex items-center justify-between w-full">
         <h1 className="text-lg font-bold">Products Manager</h1>
-        <ProductAdd />
+        <Link href={'/admin/products/add'}>
+          <Button variant={'outline'}>
+            <Plus /> Add Product
+          </Button>
+        </Link>
       </div>
 
       {/* Table */}

@@ -3,62 +3,52 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getProducts } from '@/lib/data';
 import { Decimal } from '@prisma/client/runtime/library';
+import { Prisma } from '@prisma/client';
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json();
+    // Parse request body
+    const data = await request.json();
 
-    const {
-      name,
-      description,
-      price,
-      stock,
-      isActive = true,
-      categoryIds = [],
-      images = [],
-    } = body;
-
-    const newProduct = await prisma.$transaction(async (tx) => {
-      const product = await tx.product.create({
+    // Create the product using a transaction to ensure data consistency
+    const product = await prisma.$transaction(async (tx) => {
+      // 1. Create the base product
+      const newProduct = await tx.product.create({
         data: {
-          name,
-          description,
-          price: Decimal(price),
-          stock: stock || 0,
-          isActive,
+          name: data.name,
+          description: data.description,
+          price: new Decimal(data.price.toString()),
+          stock: parseInt(data.stock),
+          sku: data.sku || null,
+          isActive: data.isActive !== undefined ? data.isActive : true,
         },
       });
 
-      if (categoryIds.length > 0) {
-        await Promise.all(
-          categoryIds.map((categoryId: any) =>
-            tx.productCategory.create({
-              data: {
-                productId: product.id,
-                categoryId,
-              },
-            }),
-          ),
-        );
+      // 2. Create product images if any
+      if (data.images && data.images.length > 0) {
+        await tx.productImage.createMany({
+          data: data.images.map((url: string, index: number) => ({
+            url,
+            productId: newProduct.id,
+            isMain: index === 0,
+            alt: `${data.name} image ${index + 1}`,
+          })),
+        });
       }
 
-      if (images.length > 0) {
-        await Promise.all(
-          images.map((image: any) =>
-            tx.productImage.create({
-              data: {
-                url: image.url,
-                alt: image.alt || null,
-                isMain: image.isMain || false,
-                productId: product.id,
-              },
-            }),
-          ),
-        );
+      // 3. Create product-category relationships if any
+      if (data.categories && data.categories.length > 0) {
+        await tx.productCategory.createMany({
+          data: data.categories.map((categoryId: string) => ({
+            productId: newProduct.id,
+            categoryId,
+          })),
+        });
       }
 
+      // 4. Return the complete product with relationships
       return tx.product.findUnique({
-        where: { id: product.id },
+        where: { id: newProduct.id },
         include: {
           images: true,
           categories: {
@@ -70,18 +60,22 @@ export async function POST(req: NextRequest) {
       });
     });
 
-    return NextResponse.json(newProduct, { status: 201 });
+    return NextResponse.json(product, { status: 201 });
   } catch (error) {
-    console.error('Kesalahan saat membuat produk:', error);
+    console.error('Error creating product:', error);
 
-    return NextResponse.json(
-      {
-        success: false,
-        message: 'Terjadi kesalahan saat membuat produk',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 },
-    );
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        return NextResponse.json(
+          { error: 'A product with this SKU already exists' },
+          { status: 409 },
+        );
+      }
+    }
+
+    return NextResponse.json({ error: 'Failed to create product' }, { status: 500 });
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
