@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 // import { getProducts } from '@/lib/data';
 // import { Decimal } from '@prisma/client/runtime/library';
 
@@ -85,12 +87,22 @@ import { prisma } from '@/lib/prisma';
 //   }
 // }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const categories = await prisma.category.findMany();
+    const { searchParams } = new URL(req.url);
+    const nameSortOrder = searchParams.get('name') || undefined;
+    const dateSortOrder = searchParams.get('date') || undefined;
+
+    const categories = await prisma.category.findMany({
+      orderBy: [
+        { name: nameSortOrder as 'asc' | 'desc' | undefined },
+        { createdAt: dateSortOrder as 'asc' | 'desc' | undefined },
+      ],
+    });
+
     return NextResponse.json(categories, { status: 200 });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: 'Failed to fetch Products' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch categories' }, { status: 500 });
   }
 }
