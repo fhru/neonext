@@ -22,12 +22,6 @@ export default function DashboardPage() {
   const { data, error } = useSWR<Category[]>(`/api/admin/category?name=${nameSortOrder}&date=${dateSortOrder}`, fetcher);
   const [categories, setCategories] = useState<Category[]>([]);
 
-  useEffect(() => {
-    if (data) {
-      setCategories(data);
-    }
-  }, [data]);
-
   if (error) return <p>Error Fetching Data</p>;
 
   useEffect(() => {
