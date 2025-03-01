@@ -25,6 +25,8 @@ export interface Product {
   price: Decimal;
   stock: number;
   createdAt: Date;
+  sku: string;
+  isActive: boolean;
   images: Array<{
     id: string;
     url: string;

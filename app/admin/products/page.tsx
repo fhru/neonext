@@ -3,14 +3,7 @@
 import { ContentLayout } from '@/components/admin-panel/content-layout';
 import Loading from '@/components/admin-panel/loading';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,7 +32,6 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 export default function DashboardPage() {
   const { data, error } = useSWR<Product[]>('/api/admin/products', fetcher);
   const [products, setProducts] = useState<Product[]>([]);
-  const [isEdit, setIsEdit] = useState(false);
 
   useEffect(() => {
     if (data) {
@@ -49,8 +41,6 @@ export default function DashboardPage() {
 
   if (error) return <p>Error Fetching Data</p>;
   if (!data) return <Loading />;
-
-  console.log(data);
 
   return (
     <ContentLayout title="Products">
@@ -126,7 +116,9 @@ export default function DashboardPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                      <DropdownMenuItem onClick={() => setIsEdit(true)}>Edit</DropdownMenuItem>
+                      <Link href={`/admin/products/edit/${product.id}`}>
+                        <DropdownMenuItem>Edit</DropdownMenuItem>
+                      </Link>
                       <DropdownMenuItem>Delete</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -135,22 +127,6 @@ export default function DashboardPage() {
             ))}
           </TableBody>
         </Table>
-
-        {/* edit dialog */}
-        <Dialog open={isEdit} onOpenChange={setIsEdit}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Are you absolutely sure?</DialogTitle>
-              <DialogDescription>
-                This action cannot be undone. This will permanently delete your account and remove
-                your data from our servers.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button type="submit">Save Changes</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </ContentLayout>
   );
