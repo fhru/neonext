@@ -1,27 +1,15 @@
-'use client';
-import { ContentLayout } from '@/components/admin-panel/content-layout';
-import Loading from '@/components/admin-panel/loading';
-import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Category } from '@prisma/client';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { ChevronDown, ChevronUp, Ellipsis, Plus } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import useSWR from 'swr';
-import { formatDate } from '@/lib/utils';
-import { useRouter } from 'next/navigation';
+"use client";
+import { ContentLayout } from "@/components/admin-panel/content-layout";
+import Loading from "@/components/admin-panel/loading";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Category } from "@prisma/client";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Ellipsis, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import useSWR from "swr";
+import { formatDate } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 export default function DashboardPage() {
@@ -29,6 +17,8 @@ export default function DashboardPage() {
   const [dateSortOrder, setDateSortOrder] = useState<'asc' | 'desc'>('asc');
   const [initialLoading, setInitialLoading] = useState(true);
   const [isEdit, setIsEdit] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const router = useRouter();
   const { data, error } = useSWR<Category[]>(
@@ -45,6 +35,27 @@ export default function DashboardPage() {
       setInitialLoading(false);
     }
   }, [data]);
+
+  const handleDelete = async () => {
+    if (!selectedCategory) return;
+
+    try {
+      const response = await fetch(`/api/admin/category?id=${selectedCategory.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete category");
+      }
+
+      toast.success("Category deleted successfully");
+      setCategories(prevCategories => prevCategories.filter(category => category.id !== selectedCategory.id));
+      setIsDeleteDialogOpen(false);
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      toast.error("Failed to delete category");
+    }
+  };
 
   if (initialLoading) return <Loading />;
   return (
@@ -101,8 +112,8 @@ export default function DashboardPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                      <DropdownMenuItem onClick={() => setIsEdit(true)}>Edit</DropdownMenuItem>
-                      <DropdownMenuItem>Delete</DropdownMenuItem>
+                        <DropdownMenuItem className="cursor-pointer" onClick={() => router.push(`/admin/categories/${category.id}`)}>Edit</DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer" onClick={() => { setSelectedCategory(category); setIsDeleteDialogOpen(true); }}>Delete</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -111,6 +122,19 @@ export default function DashboardPage() {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+          </DialogHeader>
+          <p>Are you sure you want to delete this category?</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </ContentLayout>
   );
 }
