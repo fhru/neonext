@@ -23,7 +23,6 @@ model Product {
   description String
   price       Decimal          @db.Decimal(10, 2)
   stock       Int              @default(0)
-  sku         String?          @unique
   images      ProductImage[]
   categories  ProductCategory[]
   reviews     Review[]
@@ -57,7 +56,6 @@ model ProductImage {
   id        String   @id @default(cuid())
   url       String
   alt       String?
-  isMain    Boolean  @default(false)
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   productId String
   createdAt DateTime @default(now())

@@ -25,13 +25,11 @@ export interface Product {
   price: Decimal;
   stock: number;
   createdAt: Date;
-  sku: string;
   isActive: boolean;
   images: Array<{
     id: string;
     url: string;
     alt: string;
-    isMain: boolean;
   }>;
   categories: Array<{
     category: {
@@ -45,6 +43,5 @@ export interface ProductImage {
   id: string;
   url: string;
   alt?: string;
-  isMain: boolean;
   file?: File;
 }
