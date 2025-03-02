@@ -25,3 +25,8 @@ export const formatPrice = (price: number) => {
 export const calculateDiscountedPrice = (price: number, discount: number) => {
   return price - (price * discount) / 100;
 };
+
+export const getOptimizedImageUrl = (secureUrl: string) => {
+  if (!secureUrl) return '';
+  return secureUrl.replace('/upload/', `/upload/f_auto,q_auto/`);
+};
