@@ -1,5 +1,6 @@
 'use client';
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
@@ -52,9 +53,9 @@ export default function ProductTable({ products }: { products: Product[] }) {
                           key={img.id}
                           src={img.url}
                           alt={img.alt}
-                          width={64}
-                          height={64}
-                          className="w-24 border text-sm rounded"
+                          width={128}
+                          height={128}
+                          className="w-24 h-24 object-cover object-center border text-sm rounded"
                         />
                       ))}
                     </div>
@@ -71,8 +72,12 @@ export default function ProductTable({ products }: { products: Product[] }) {
                       <Ellipsis />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="text-sm">
-                    {product.categories.map((pc) => pc.category.name)}
+                  <PopoverContent className="text-sm flex flex-wrap gap-1">
+                    {product.categories.map((pc) => (
+                      <Badge variant={'secondary'} key={pc.category.id}>
+                        {pc.category.name}
+                      </Badge>
+                    ))}
                   </PopoverContent>
                 </Popover>
               </TableCell>

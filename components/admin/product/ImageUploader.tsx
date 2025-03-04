@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { UploadCloud, X } from 'lucide-react';
@@ -8,9 +7,12 @@ import Image from 'next/image';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
-export default function ImageUploader() {
-  const [files, setFiles] = useState<File[]>([]);
+interface ImageUploaderProps {
+  files: File[];
+  setFiles: (files: File[]) => void;
+}
 
+export default function ImageUploader({ files, setFiles }: ImageUploaderProps) {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files) return;
 

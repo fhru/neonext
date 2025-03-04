@@ -44,7 +44,6 @@ export default function MultiSelect({
   const [open, setOpen] = React.useState(false);
   const [inputValue, setInputValue] = React.useState('');
 
-  // Fungsi untuk mendapatkan nama dari ID yang dipilih
   const getOptionName = (id: string): string => {
     const option = options.find((opt) => opt.id === id);
     return option ? option.name : id;
@@ -180,7 +179,7 @@ export default function MultiSelect({
               {selectableOptions.map((option) => (
                 <CommandItem
                   key={option.id}
-                  value={option.name} // Menggunakan name untuk pencarian
+                  value={option.name}
                   onSelect={() => {
                     onChange([...selected, option.id]);
                   }}

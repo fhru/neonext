@@ -15,10 +15,12 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { ProductFormValues } from '@/schema/product-schema';
 import { UseFormReturn } from 'react-hook-form';
-import MultiSelect from './CategorySelector';
+import MultiSelect from '@/components/admin/product/CategorySelector';
 import { useState } from 'react';
 import { Category } from '@/types';
-import ImageUploader from './ImageUploader';
+import ImageUploader from '@/components/admin/product/ImageUploader';
+import { uploadImagesToCloudinary } from '@/services/cloudinary-service';
+import { Loader2 } from 'lucide-react';
 
 interface ProductAddFormProps {
   form: UseFormReturn<ProductFormValues>;
@@ -29,13 +31,35 @@ interface ProductAddFormProps {
 export default function ProductAddForm({ form, onSubmit, categories }: ProductAddFormProps) {
   const categoryOptions = categories.map((cat) => ({ id: cat.id, name: cat.name }));
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
 
-  const handleFormSubmit = (values: ProductFormValues) => {
-    const updatedValues = {
-      ...values,
-      categories: selectedCategories,
-    };
-    onSubmit(updatedValues);
+  const handleFormSubmit = async (values: ProductFormValues) => {
+    setIsLoading(true);
+
+    try {
+      let urls: string[] = [];
+
+      if (files.length > 0) {
+        urls = await uploadImagesToCloudinary(files);
+      }
+
+      const updatedValues = {
+        ...values,
+        categories: selectedCategories,
+        images: urls.length > 0 ? urls : undefined,
+      };
+
+      onSubmit(updatedValues);
+
+      form.reset();
+      setSelectedCategories([]);
+      setFiles([]);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -132,9 +156,18 @@ export default function ProductAddForm({ form, onSubmit, categories }: ProductAd
         </div>
 
         {/* image upload */}
-        <ImageUploader />
+        <ImageUploader files={files} setFiles={setFiles} />
 
-        <Button type="submit">Submit</Button>
+        <Button type="submit" disabled={isLoading} className="w-full">
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Submitting...
+            </>
+          ) : (
+            'Submit'
+          )}
+        </Button>
       </form>
     </Form>
   );

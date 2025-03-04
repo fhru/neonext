@@ -1,28 +1,28 @@
-/**
- * Service for handling Cloudinary image uploads
- */
-export async function uploadToCloudinary(file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('upload_preset', 'ml_default');
+export async function uploadImagesToCloudinary(files: File[]): Promise<string[]> {
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 
-  const response = await fetch(
-    `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-    {
-      method: 'POST',
-      body: formData,
-    },
-  );
+  const uploadedImageUrls: string[] = [];
 
-  if (!response.ok) {
-    throw new Error(`Failed to upload ${file.name}`);
+  for (const file of files) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', 'ml_default');
+
+    try {
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (data.secure_url) {
+        uploadedImageUrls.push(data.secure_url);
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+    }
   }
 
-  const data = await response.json();
-  return data.secure_url;
-}
-
-export async function uploadMultipleImages(files: File[]): Promise<string[]> {
-  const uploadPromises = files.map(uploadToCloudinary);
-  return Promise.all(uploadPromises);
+  console.log({ uploadedImageUrls });
+  return uploadedImageUrls;
 }
