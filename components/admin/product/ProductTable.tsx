@@ -40,7 +40,7 @@ export default function ProductTable({ products }: { products: Product[] }) {
               <TableCell>
                 {/* image popover */}
                 <Popover>
-                  <PopoverTrigger>
+                  <PopoverTrigger asChild>
                     <Button size={'icon'} variant={'outline'}>
                       <Ellipsis />
                     </Button>
@@ -66,7 +66,7 @@ export default function ProductTable({ products }: { products: Product[] }) {
               <TableCell>{product.stock}</TableCell>
               <TableCell>
                 <Popover>
-                  <PopoverTrigger>
+                  <PopoverTrigger asChild>
                     <Button size={'icon'} variant={'outline'}>
                       <Ellipsis />
                     </Button>

@@ -1,8 +1,8 @@
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import ProductAddDialog from '@/components/admin/product/ProductAddDialog';
 
-export default function ProductSearchBar() {
+export default function ProductHeader() {
   return (
     <div className="flex gap-4">
       <div className="relative w-full">
@@ -12,7 +12,7 @@ export default function ProductSearchBar() {
         />
         <Input className="pl-8 bg-background" placeholder="Search products..." />
       </div>
-      <Button variant={'outline'}>Add Product</Button>
+      <ProductAddDialog />
     </div>
   );
 }

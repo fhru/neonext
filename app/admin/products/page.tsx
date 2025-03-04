@@ -3,7 +3,7 @@
 import { ContentLayout } from '@/components/admin-panel/content-layout';
 import Loading from '@/components/admin-panel/loading';
 import ProductTable from '@/components/admin/product/ProductTable';
-import ProductSearchBar from '@/components/admin/product/SearchBar';
+import ProductHeader from '@/components/admin/product/ProductHeader';
 import useSWR from 'swr';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -14,13 +14,11 @@ export default function ProductPage() {
   if (isLoading) return <Loading />;
   if (error) return <p>Error Fetching Data</p>;
 
-  console.log(data);
-
   return (
     <ContentLayout title="Products">
       <div className="flex flex-col gap-4">
         {/* Search & add bar */}
-        <ProductSearchBar />
+        <ProductHeader />
         {/* Table */}
         <ProductTable products={data} />
       </div>
