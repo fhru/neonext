@@ -18,6 +18,7 @@ import useSWR, { mutate } from 'swr';
 import Loading from '@/components/admin-panel/loading';
 import { Category } from '@/types';
 import { toast } from 'sonner';
+import { Plus } from 'lucide-react';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -74,7 +75,9 @@ export default function ProductAddDialog() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Add Product</Button>
+        <Button variant="outline">
+          <Plus /> Add Product
+        </Button>
       </DialogTrigger>
       <DialogContent className="max-w-5xl">
         <DialogHeader>

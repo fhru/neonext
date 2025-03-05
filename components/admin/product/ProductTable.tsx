@@ -1,7 +1,23 @@
 'use client';
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Table,
@@ -13,10 +29,61 @@ import {
 } from '@/components/ui/table';
 import { formatDate, formatPrice } from '@/lib/utils';
 import { Product } from '@/types';
-import { Ellipsis } from 'lucide-react';
+import { Check, Copy, Ellipsis, Loader, PenBox, Trash2 } from 'lucide-react';
 import Image from 'next/image';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { mutate } from 'swr';
 
 export default function ProductTable({ products }: { products: Product[] }) {
+  const [copied, setCopied] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+
+  const handleCopy = async (productId: string) => {
+    try {
+      await navigator.clipboard.writeText(productId);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast.success('ID Copied to Clipboard');
+    } catch (err) {
+      console.error('Gagal menyalin teks:', err);
+    }
+  };
+
+  const confirmDelete = (productId: string) => {
+    setProductToDelete(productId);
+    setIsAlertOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!productToDelete) return;
+
+    try {
+      setIsDeleting(true);
+      const response = await fetch(`/api/admin/products/${productToDelete}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to Delete Product');
+      }
+
+      const data = await response.json();
+      toast.success(data.message);
+
+      mutate('/api/admin/products');
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast.error('Error deleting product');
+    } finally {
+      setIsDeleting(false);
+      setIsAlertOpen(false);
+      setProductToDelete(null);
+    }
+  };
+
   return (
     <div className="bg-background border rounded-lg">
       <Table>
@@ -42,9 +109,11 @@ export default function ProductTable({ products }: { products: Product[] }) {
                 {/* image popover */}
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button size={'icon'} variant={'outline'}>
-                      <Ellipsis />
-                    </Button>
+                    <span>
+                      <Button size={'icon'} variant={'ghost'}>
+                        <Ellipsis />
+                      </Button>
+                    </span>
                   </PopoverTrigger>
                   <PopoverContent className="w-fit">
                     <div className="flex gap-2 flex-wrap">
@@ -68,11 +137,13 @@ export default function ProductTable({ products }: { products: Product[] }) {
               <TableCell>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button size={'icon'} variant={'outline'}>
-                      <Ellipsis />
-                    </Button>
+                    <span>
+                      <Button size={'icon'} variant={'ghost'}>
+                        <Ellipsis />
+                      </Button>
+                    </span>
                   </PopoverTrigger>
-                  <PopoverContent className="text-sm flex flex-wrap gap-1">
+                  <PopoverContent className="text-sm flex flex-wrap gap-1 w-fit">
                     {product.categories.map((pc) => (
                       <Badge variant={'secondary'} key={pc.category.id}>
                         {pc.category.name}
@@ -83,14 +154,62 @@ export default function ProductTable({ products }: { products: Product[] }) {
               </TableCell>
               <TableCell>{formatDate(product.createdAt)}</TableCell>
               <TableCell>
-                <Button size={'icon'} variant={'outline'}>
-                  <Ellipsis />
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <span>
+                      <Button size={'icon'} variant={'ghost'}>
+                        <Ellipsis />
+                      </Button>
+                    </span>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => handleCopy(product.id)}>
+                      {copied ? <Check /> : <Copy />}
+                      Copy ID
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <PenBox /> Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => confirmDelete(product.id)}>
+                      <Trash2 />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus produk ini? Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader className="mr-2 h-4 w-4 animate-spin" />
+                  Menghapus...
+                </>
+              ) : (
+                'Hapus'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
