@@ -29,17 +29,20 @@ import {
 } from '@/components/ui/table';
 import { formatDate, formatPrice } from '@/lib/utils';
 import { Product } from '@/types';
-import { Check, Copy, Ellipsis, Loader, PenBox, Trash2 } from 'lucide-react';
+import { Check, Copy, Ellipsis, Loader, Pen, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { mutate } from 'swr';
+import ProductEditDialog from './ProductEditDialog';
 
 export default function ProductTable({ products }: { products: Product[] }) {
   const [copied, setCopied] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [productToEdit, setProductToEdit] = useState<string | null>(null);
 
   const handleCopy = async (productId: string) => {
     try {
@@ -82,6 +85,11 @@ export default function ProductTable({ products }: { products: Product[] }) {
       setIsAlertOpen(false);
       setProductToDelete(null);
     }
+  };
+
+  const handleEdit = (productId: string) => {
+    setProductToEdit(productId);
+    setIsEditOpen(true);
   };
 
   return (
@@ -167,8 +175,8 @@ export default function ProductTable({ products }: { products: Product[] }) {
                       {copied ? <Check /> : <Copy />}
                       Copy ID
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <PenBox /> Edit
+                    <DropdownMenuItem onClick={() => handleEdit(product.id)}>
+                      <Pen /> Edit
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => confirmDelete(product.id)}>
                       <Trash2 />
@@ -181,6 +189,13 @@ export default function ProductTable({ products }: { products: Product[] }) {
           ))}
         </TableBody>
       </Table>
+
+      {/* edit component */}
+      <ProductEditDialog
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        productId={productToEdit || ''}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>

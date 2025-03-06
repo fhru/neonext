@@ -15,7 +15,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import ProductAddForm from '@/components/admin/product/ProductAddForm';
 import useSWR, { mutate } from 'swr';
-import Loading from '@/components/admin-panel/loading';
 import { Category } from '@/types';
 import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
@@ -64,12 +63,13 @@ export default function ProductAddDialog() {
       toast.success(`${values.name} Successfuly Added`);
       mutate('/api/admin/products');
     } catch (error) {
+      setIsOpen(false);
       console.error('Error Creating Product', error);
       toast.error('Failed to Create Product');
     }
   }
 
-  if (isLoading) return <Loading />;
+  if (isLoading) return;
   if (error) return <p>Error Fetching Data</p>;
 
   return (

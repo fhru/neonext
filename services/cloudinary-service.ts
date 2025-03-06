@@ -24,5 +24,6 @@ export async function uploadImagesToCloudinary(files: File[]): Promise<string[]>
   }
 
   console.log({ uploadedImageUrls });
+  console.log('Cloudinary Called');
   return uploadedImageUrls;
 }
