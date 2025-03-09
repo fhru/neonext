@@ -61,9 +61,29 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const products = await getProducts();
+    const searchParams = request.nextUrl.searchParams;
+
+    const search = searchParams.get('search')?.trim() || '';
+
+    const products = await prisma.product.findMany({
+      where: search
+        ? {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { description: { contains: search, mode: 'insensitive' } },
+            ],
+          }
+        : {},
+      include: {
+        images: true,
+        categories: {
+          include: { category: true },
+        },
+      },
+    });
+
     return NextResponse.json(products, { status: 200 });
   } catch (error) {
     console.error(error);

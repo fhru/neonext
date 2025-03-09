@@ -28,21 +28,30 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { formatDate, formatPrice } from '@/lib/utils';
-import { Product } from '@/types';
 import { Check, Copy, Ellipsis, Loader, Pen, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { mutate } from 'swr';
-import ProductEditDialog from './ProductEditDialog';
+import useSWR, { mutate } from 'swr';
+import ProductEditDialog from '@/components/admin/product/ProductEditDialog';
+import ProductTableSkeleton from '@/components/admin/product/ProductTableSkeleton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Product } from '@/types';
 
-export default function ProductTable({ products }: { products: Product[] }) {
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+export default function ProductTable({ search }: { search: string }) {
   const [copied, setCopied] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState<string | null>(null);
+
+  const { data: products, error } = useSWR<Product[]>(
+    `/api/admin/products?search=${encodeURIComponent(search)}`,
+    fetcher,
+  );
 
   const handleCopy = async (productId: string) => {
     try {
@@ -92,6 +101,15 @@ export default function ProductTable({ products }: { products: Product[] }) {
     setIsEditOpen(true);
   };
 
+  if (!products) return <ProductTableSkeleton />;
+  if (error)
+    return (
+      <Alert>
+        <AlertTitle>Oops</AlertTitle>
+        <AlertDescription>Error Fetching Data</AlertDescription>
+      </Alert>
+    );
+
   return (
     <div className="bg-background border rounded-lg">
       <Table>
@@ -109,84 +127,92 @@ export default function ProductTable({ products }: { products: Product[] }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {products.map((product, index) => (
-            <TableRow key={product.id}>
-              <TableCell>{index + 1}</TableCell>
-              <TableCell className="max-w-44">{product.name}</TableCell>
-              <TableCell>
-                {/* image popover */}
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <span>
-                      <Button size={'icon'} variant={'ghost'}>
-                        <Ellipsis />
-                      </Button>
-                    </span>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-fit">
-                    <div className="flex gap-2 flex-wrap">
-                      {product.images.map((img) => (
-                        <Image
-                          key={img.id}
-                          src={img.url}
-                          alt={img.alt}
-                          width={128}
-                          height={128}
-                          className="w-24 h-24 object-cover object-center border text-sm rounded"
-                        />
+          {products.length !== 0 ? (
+            products.map((product, index) => (
+              <TableRow key={product.id}>
+                <TableCell>{index + 1}</TableCell>
+                <TableCell className="max-w-44">{product.name}</TableCell>
+                <TableCell>
+                  {/* image popover */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <span>
+                        <Button size={'icon'} variant={'ghost'}>
+                          <Ellipsis />
+                        </Button>
+                      </span>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-fit">
+                      <div className="flex gap-2 flex-wrap">
+                        {product.images.map((img) => (
+                          <Image
+                            key={img.id}
+                            src={img.url}
+                            alt={img.alt}
+                            width={128}
+                            height={128}
+                            className="w-24 h-24 object-cover object-center border text-sm rounded"
+                          />
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </TableCell>
+                <TableCell className="max-w-64">{product.description}</TableCell>
+                <TableCell>{formatPrice(Number(product.price))}</TableCell>
+                <TableCell>{product.stock}</TableCell>
+                <TableCell>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <span>
+                        <Button size={'icon'} variant={'ghost'}>
+                          <Ellipsis />
+                        </Button>
+                      </span>
+                    </PopoverTrigger>
+                    <PopoverContent className="text-sm flex flex-wrap gap-1 w-fit">
+                      {product.categories.map((pc) => (
+                        <Badge variant={'secondary'} key={pc.category.id}>
+                          {pc.category.name}
+                        </Badge>
                       ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </TableCell>
-              <TableCell className="max-w-64">{product.description}</TableCell>
-              <TableCell>{formatPrice(Number(product.price))}</TableCell>
-              <TableCell>{product.stock}</TableCell>
-              <TableCell>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <span>
-                      <Button size={'icon'} variant={'ghost'}>
-                        <Ellipsis />
-                      </Button>
-                    </span>
-                  </PopoverTrigger>
-                  <PopoverContent className="text-sm flex flex-wrap gap-1 w-fit">
-                    {product.categories.map((pc) => (
-                      <Badge variant={'secondary'} key={pc.category.id}>
-                        {pc.category.name}
-                      </Badge>
-                    ))}
-                  </PopoverContent>
-                </Popover>
-              </TableCell>
-              <TableCell>{formatDate(product.createdAt)}</TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <span>
-                      <Button size={'icon'} variant={'ghost'}>
-                        <Ellipsis />
-                      </Button>
-                    </span>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => handleCopy(product.id)}>
-                      {copied ? <Check /> : <Copy />}
-                      Copy ID
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleEdit(product.id)}>
-                      <Pen /> Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => confirmDelete(product.id)}>
-                      <Trash2 />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                    </PopoverContent>
+                  </Popover>
+                </TableCell>
+                <TableCell>{formatDate(product.createdAt)}</TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <span>
+                        <Button size={'icon'} variant={'ghost'}>
+                          <Ellipsis />
+                        </Button>
+                      </span>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem onClick={() => handleCopy(product.id)}>
+                        {copied ? <Check /> : <Copy />}
+                        Copy ID
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleEdit(product.id)}>
+                        <Pen /> Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => confirmDelete(product.id)}>
+                        <Trash2 />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={9} className="text-center">
+                <span>No Product Found With Name &quot;{search}&quot;</span>
               </TableCell>
             </TableRow>
-          ))}
+          )}
         </TableBody>
       </Table>
 
