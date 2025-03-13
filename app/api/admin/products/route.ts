@@ -1,64 +1,46 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getProducts } from '@/lib/data';
 import { Decimal } from '@prisma/client/runtime/library';
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json();
+    const data = await request.json();
 
-    const {
-      name,
-      description,
-      price,
-      stock,
-      isActive = true,
-      categoryIds = [],
-      images = [],
-    } = body;
-
-    const newProduct = await prisma.$transaction(async (tx) => {
-      const product = await tx.product.create({
+    const product = await prisma.$transaction(async (tx) => {
+      const newProduct = await tx.product.create({
         data: {
-          name,
-          description,
-          price: Decimal(price),
-          stock: stock || 0,
-          isActive,
+          name: data.name,
+          description: data.description,
+          price: Decimal(data.price.toString()),
+          stock: parseInt(data.stock),
+          isActive: data.isActive !== undefined ? data.isActive : true,
         },
       });
 
-      if (categoryIds.length > 0) {
-        await Promise.all(
-          categoryIds.map((categoryId: any) =>
-            tx.productCategory.create({
-              data: {
-                productId: product.id,
-                categoryId,
-              },
-            }),
-          ),
-        );
+      if (data.images && data.images.length > 0) {
+        await tx.productImage.createMany({
+          data: data.images.map((url: string, index: number) => ({
+            url,
+            productId: newProduct.id,
+            alt: `${data.name} image ${index + 1}`,
+          })),
+        });
       }
 
-      if (images.length > 0) {
-        await Promise.all(
-          images.map((image: any) =>
-            tx.productImage.create({
-              data: {
-                url: image.url,
-                alt: image.alt || null,
-                isMain: image.isMain || false,
-                productId: product.id,
-              },
-            }),
-          ),
-        );
+      if (data.categories && data.categories.length > 0) {
+        await tx.productCategory.createMany({
+          data: data.categories.map((categoryId: string) => ({
+            productId: newProduct.id,
+            categoryId,
+          })),
+        });
       }
 
       return tx.product.findUnique({
-        where: { id: product.id },
+        where: { id: newProduct.id },
         include: {
           images: true,
           categories: {
@@ -70,24 +52,38 @@ export async function POST(req: NextRequest) {
       });
     });
 
-    return NextResponse.json(newProduct, { status: 201 });
+    return NextResponse.json(product, { status: 201 });
   } catch (error) {
-    console.error('Kesalahan saat membuat produk:', error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: 'Terjadi kesalahan saat membuat produk',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 },
-    );
+    console.error('Error creating product:', error);
+    return NextResponse.json({ error: 'Failed to create product' }, { status: 500 });
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const products = await getProducts();
+    const searchParams = request.nextUrl.searchParams;
+
+    const search = searchParams.get('search')?.trim() || '';
+
+    const products = await prisma.product.findMany({
+      where: search
+        ? {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { description: { contains: search, mode: 'insensitive' } },
+            ],
+          }
+        : {},
+      include: {
+        images: true,
+        categories: {
+          include: { category: true },
+        },
+      },
+    });
+
     return NextResponse.json(products, { status: 200 });
   } catch (error) {
     console.error(error);

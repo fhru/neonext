@@ -15,9 +15,6 @@ export async function getProducts() {
         },
       },
     },
-    where: {
-      isActive: true,
-    },
   });
 
   return products;

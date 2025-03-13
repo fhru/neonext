@@ -3,95 +3,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
-// import { getProducts } from '@/lib/data';
-// import { Decimal } from '@prisma/client/runtime/library';
-
-// export async function POST(req: NextRequest) {
-//   try {
-//     const body = await req.json();
-
-//     const {
-//       name,
-//       description,
-//       price,
-//       stock,
-//       isActive = true,
-//       categoryIds = [],
-//       images = [],
-//     } = body;
-
-//     const newProduct = await prisma.$transaction(async (tx) => {
-//       const product = await tx.product.create({
-//         data: {
-//           name,
-//           description,
-//           price: Decimal(price),
-//           stock: stock || 0,
-//           isActive,
-//         },
-//       });
-
-//       if (categoryIds.length > 0) {
-//         await Promise.all(
-//           categoryIds.map((categoryId: any) =>
-//             tx.productCategory.create({
-//               data: {
-//                 productId: product.id,
-//                 categoryId,
-//               },
-//             }),
-//           ),
-//         );
-//       }
-
-//       if (images.length > 0) {
-//         await Promise.all(
-//           images.map((image: any) =>
-//             tx.productImage.create({
-//               data: {
-//                 url: image.url,
-//                 alt: image.alt || null,
-//                 isMain: image.isMain || false,
-//                 productId: product.id,
-//               },
-//             }),
-//           ),
-//         );
-//       }
-
-//       return tx.product.findUnique({
-//         where: { id: product.id },
-//         include: {
-//           images: true,
-//           categories: {
-//             include: {
-//               category: true,
-//             },
-//           },
-//         },
-//       });
-//     });
-
-//     return NextResponse.json(newProduct, { status: 201 });
-//   } catch (error) {
-//     console.error('Kesalahan saat membuat produk:', error);
-
-//     return NextResponse.json(
-//       {
-//         success: false,
-//         message: 'Terjadi kesalahan saat membuat produk',
-//         error: error instanceof Error ? error.message : 'Unknown error',
-//       },
-//       { status: 500 },
-//     );
-//   }
-// }
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
     const nameSortOrder = searchParams.get('name') || undefined;
     const dateSortOrder = searchParams.get('date') || undefined;
+
+    if (id) {
+      const category = await prisma.category.findUnique({
+        where: { id: String(id) },
+      });
+
+      if (!category) {
+        return NextResponse.json({ error: 'Category not found' }, { status: 404 });
+      }
+
+      return NextResponse.json(category, { status: 200 });
+    }
 
     const categories = await prisma.category.findMany({
       orderBy: [
@@ -104,5 +34,92 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Failed to fetch categories' }, { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { name, description } = body;
+
+    const newCategory = await prisma.category.create({
+      data: {
+        name,
+        description,
+      },
+    });
+
+    return NextResponse.json(newCategory, { status: 201 });
+  } catch (error) {
+    console.error('Error creating category:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'Error creating category',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 },
+    );
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    }
+
+    const body = await req.json();
+    const { name, description } = body;
+
+    const updatedCategory = await prisma.category.update({
+      where: { id: String(id) },
+      data: {
+        name,
+        description,
+      },
+    });
+
+    return NextResponse.json(updatedCategory, { status: 200 });
+  } catch (error) {
+    console.error('Error updating category:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'Error updating category',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    }
+
+    const deletedCategory = await prisma.category.delete({
+      where: { id: String(id) },
+    });
+
+    return NextResponse.json(deletedCategory, { status: 200 });
+  } catch (error) {
+    console.error('Error deleting category:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'Error deleting category',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 },
+    );
   }
 }

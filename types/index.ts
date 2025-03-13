@@ -10,7 +10,7 @@ export interface Images {
 export interface Category {
   id: string;
   name: string;
-  description: string;
+  description?: string;
 }
 
 export interface ProductCategory {
@@ -25,11 +25,11 @@ export interface Product {
   price: Decimal;
   stock: number;
   createdAt: Date;
+  isActive: boolean;
   images: Array<{
     id: string;
     url: string;
     alt: string;
-    isMain: boolean;
   }>;
   categories: Array<{
     category: {
@@ -37,4 +37,13 @@ export interface Product {
       name: string;
     };
   }>;
+}
+
+export interface ProductImage {
+  id: string;
+  url: string;
+  productId: string;
+  updatedAt: Date;
+  alt?: string;
+  file?: File;
 }
