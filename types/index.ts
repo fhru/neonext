@@ -42,6 +42,8 @@ export interface Product {
 export interface ProductImage {
   id: string;
   url: string;
+  productId: string;
+  updatedAt: Date;
   alt?: string;
   file?: File;
 }

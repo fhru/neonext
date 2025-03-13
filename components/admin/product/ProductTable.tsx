@@ -32,11 +32,11 @@ import { Check, Copy, Ellipsis, Loader, Pen, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import useSWR, { mutate } from 'swr';
 import ProductEditDialog from '@/components/admin/product/ProductEditDialog';
 import ProductTableSkeleton from '@/components/admin/product/ProductTableSkeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Product } from '@/types';
+import useSWR from 'swr';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -48,10 +48,11 @@ export default function ProductTable({ search }: { search: string }) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState<string | null>(null);
 
-  const { data: products, error } = useSWR<Product[]>(
-    `/api/admin/products?search=${encodeURIComponent(search)}`,
-    fetcher,
-  );
+  const {
+    data: products,
+    error,
+    mutate,
+  } = useSWR<Product[]>(`/api/admin/products?search=${encodeURIComponent(search)}`, fetcher);
 
   const handleCopy = async (productId: string) => {
     try {
@@ -85,7 +86,7 @@ export default function ProductTable({ search }: { search: string }) {
       const data = await response.json();
       toast.success(data.message);
 
-      mutate('/api/admin/products');
+      mutate();
     } catch (error) {
       console.error('Error deleting product:', error);
       toast.error('Error deleting product');
