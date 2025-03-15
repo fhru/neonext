@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Table,
   TableBody,
@@ -13,21 +13,40 @@ import { formatDate } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { ProductImage } from '@/types';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Check, Copy, Ellipsis, Pen, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function ProductImageTable({ datas }: { datas?: ProductImage[] }) {
-  // Handle jika datas undefined atau kosong
   const images = useMemo(() => datas ?? [], [datas]);
+  const [copied, setCopied] = useState(false);
 
   if (images.length === 0) {
     return <div className="p-4 text-center text-gray-500">No product images found.</div>;
   }
 
+  const handleCopy = async (id: string) => {
+    try {
+      await navigator.clipboard.writeText(id);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast.success('ID Copied to Clipboard');
+    } catch (err) {
+      console.error('Gagal menyalin teks:', err);
+    }
+  };
+
   return (
-    <div className="bg-background border rounded-lg p-4">
+    <div className="bg-background border rounded-lg">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-16">No</TableHead>
+            <TableHead className="w-16 px-4">No</TableHead>
             <TableHead>Image</TableHead>
             <TableHead>Alt Text</TableHead>
             <TableHead>Product ID</TableHead>
@@ -38,7 +57,7 @@ export default function ProductImageTable({ datas }: { datas?: ProductImage[] })
         <TableBody>
           {images.map((img, index) => (
             <TableRow key={img.id}>
-              <TableCell>{index + 1}</TableCell>
+              <TableCell className="px-4">{index + 1}</TableCell>
               <TableCell>
                 {img.url ? (
                   <Image
@@ -46,7 +65,7 @@ export default function ProductImageTable({ datas }: { datas?: ProductImage[] })
                     alt={img.alt || 'Product Image'}
                     width={50}
                     height={50}
-                    className="rounded-md object-cover"
+                    className="rounded-md object-cover h-14 w-14"
                   />
                 ) : (
                   <span className="text-gray-400">No Image</span>
@@ -56,9 +75,28 @@ export default function ProductImageTable({ datas }: { datas?: ProductImage[] })
               <TableCell>{img.productId}</TableCell>
               <TableCell>{formatDate(img.updatedAt)}</TableCell>
               <TableCell className="text-center">
-                <Button variant="outline" onClick={() => alert(`Editing ${img.id}`)}>
-                  Edit
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <span>
+                      <Button size={'icon'} variant={'ghost'}>
+                        <Ellipsis />
+                      </Button>
+                    </span>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => handleCopy(img.id)}>
+                      {copied ? <Check /> : <Copy />}
+                      Copy ID
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Pen /> Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Trash2 />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
           ))}

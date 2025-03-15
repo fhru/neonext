@@ -1,17 +1,26 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const search = searchParams.get('search')?.trim() || '';
+    const query = searchParams.get('query') || '';
 
-    const images = await prisma.productImage.findMany();
+    const productImages = await prisma.productImage.findMany({
+      where: {
+        OR: [
+          { alt: { contains: query, mode: 'insensitive' } },
+          { productId: { contains: query, mode: 'insensitive' } },
+        ],
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+    });
 
-    return NextResponse.json(images, { status: 200 });
+    return NextResponse.json(productImages);
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to fetch Products' }, { status: 500 });
+    console.error('Error fetching product images:', error);
+    return NextResponse.json({ error: 'Failed to fetch product images' }, { status: 500 });
   }
 }
