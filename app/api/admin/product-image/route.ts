@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const query = searchParams.get('query') || '';
+    const query = searchParams.get('query')?.trim() || '';
 
     const productImages = await prisma.productImage.findMany({
       where: {

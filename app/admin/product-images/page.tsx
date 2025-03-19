@@ -1,4 +1,3 @@
-// product-image/page.tsx
 'use server';
 
 import { Suspense } from 'react';
@@ -6,6 +5,7 @@ import { ContentLayout } from '@/components/admin-panel/content-layout';
 import ProductImageTable from '@/components/admin/product-images/Table';
 import ProductTableSkeleton from '@/components/admin/product/ProductTableSkeleton';
 import ProductImageSearchBar from '@/components/admin/product-images/SearchBar';
+import ProductImageAddButton from '@/components/admin/product-images/AddButton';
 
 async function fetchProductImages(query?: string) {
   try {
@@ -40,11 +40,12 @@ export default async function Page({ searchParams }: { searchParams: { query?: s
 
   return (
     <ContentLayout title="Product Images">
-      <div className="flex">
+      <div className="flex gap-4">
         <ProductImageSearchBar />
+        <ProductImageAddButton />
       </div>
-      <Suspense fallback={<ProductTableSkeleton />} key={query}>
-        <ProductImageSection searchQuery={query} />
+      <Suspense fallback={<ProductTableSkeleton />}>
+        <ProductImageSection key={query} searchQuery={query} />
       </Suspense>
     </ContentLayout>
   );
